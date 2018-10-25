@@ -1,4 +1,4 @@
-version: '2'
+version: '1'
 services:
   zookeeper:
     image: debezium/zookeeper:0.8

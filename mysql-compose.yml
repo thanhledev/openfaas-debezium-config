@@ -1,0 +1,18 @@
+version: '3.2'
+services:
+  mysql:
+    image: debezium/example-mysql:0.8
+    hostname: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=debezium
+      - MYSQL_USER=mysqluser
+      - MYSQL_PASSWORD=mysqlpw
+    ports:
+      - 3306:3306
+    networks:
+      - streaming
+
+networks:
+  streaming:
+    driver: overlay
+    attachable: true

@@ -1,4 +1,4 @@
-version: '1.1'
+version: '3.2'
 services:
   zookeeper:
     image: debezium/zookeeper:0.8
@@ -16,7 +16,7 @@ services:
     hostname: kafka
     ports:
       - 9092:9092
-    links:
+    depends_on:
       - zookeeper
     environment:
       - ZOOKEEPER_CONNECT=zookeeper:2181
@@ -36,7 +36,7 @@ services:
     image: debezium/connect:0.8
     ports:
       - 8083:8083
-    links:
+    depends_on:
       - kafka
       - mysql
       - zookeeper

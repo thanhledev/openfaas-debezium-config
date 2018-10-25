@@ -1,0 +1,16 @@
+version: '3.2'
+services:
+  watcher:
+    image: alexellis2/kafka-connector:0.2.1
+    hostname: kafka-connector
+    environment:
+      - gateway_url: http://gateway:8080
+      - topics: "dbserver1.inventory.customers"
+      - print_response: "true"
+    links:
+     - zookeeper
+     - kafka
+    command: ["watch-topic", "-a", "-k", "dbserver1.inventory.customers"]
+    networks:
+      - streaming
+      - func_functions

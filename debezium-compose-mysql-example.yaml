@@ -43,21 +43,6 @@ services:
      - OFFSET_STORAGE_TOPIC=my_connect_offsets
     networks:
      - streaming
-  watcher:
-    image: debezium/kafka:0.8
-    links:
-     - zookeeper
-     - kafka
-    command: ["watch-topic", "-a", "-k", "dbserver1.inventory.customers"]
-  openfaas-sinker:
-    image: alexellis2/kafka-connector:0.2.1
-    environment:
-      gateway_url: http://gateway:8080
-      topics: "dbserver1.inventory.customers,"
-      print_reponse: "true"
-    networks:
-      - streaming
-      - func_functions
 
 networks:
   streaming:

@@ -1,48 +1,52 @@
-version: '1'
+version: '1.1'
 services:
   zookeeper:
     image: debezium/zookeeper:0.8
+    hostname: zookeeper
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
     ports:
-     - 2181:2181
-     - 2888:2888
-     - 3888:3888
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
     networks:
-     - streaming
+      - streaming
   kafka:
     image: debezium/kafka:0.8
+    hostname: kafka
     ports:
-     - 9092:9092
+      - 9092:9092
     links:
-     - zookeeper
+      - zookeeper
     environment:
-     - ZOOKEEPER_CONNECT=zookeeper:2181
+      - ZOOKEEPER_CONNECT=zookeeper:2181
     networks:
-     - streaming
+      - streaming
   mysql:
     image: debezium/example-mysql:0.8
     ports:
-     - 3306:3306
+      - 3306:3306
     environment:
-     - MYSQL_ROOT_PASSWORD=debezium
-     - MYSQL_USER=mysqluser
-     - MYSQL_PASSWORD=mysqlpw
+      - MYSQL_ROOT_PASSWORD=debezium
+      - MYSQL_USER=mysqluser
+      - MYSQL_PASSWORD=mysqlpw
     networks:
-     - streaming
+      - streaming
   connect:
     image: debezium/connect:0.8
     ports:
-     - 8083:8083
+      - 8083:8083
     links:
-     - kafka
-     - mysql
-     - zookeeper
+      - kafka
+      - mysql
+      - zookeeper
     environment:
-     - BOOTSTRAP_SERVERS=kafka:9092
-     - GROUP_ID=1
-     - CONFIG_STORAGE_TOPIC=my_connect_configs
-     - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
     networks:
-     - streaming
+      - streaming
 
 networks:
   streaming:

@@ -4,8 +4,7 @@ services:
     image: debezium/kafka:0.8
     hostname: kafka
     environment:
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ZOOKEEPER_CONNECT=zookeeper:2181      
     ports:
       - 9092:9092
     networks:

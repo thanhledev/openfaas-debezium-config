@@ -1,0 +1,94 @@
+docker-machine rm openfaas-kafka-test
+
+docker-machine create -d virtualbox openfaas-kafka-test
+
+docker-machine ssh openfaas-kafka-test
+
+docker swarm init --advertise-addr 192.168.99.120
+
+docker login
+
+curl -sL cli.openfaas.com | sudo sh
+
+git clone https://github.com/openfaas/faas && cd faas && ./deploy_stack.sh --no-auth
+
+-- can be omitted --
+faas-cli deploy -f https://raw.githubusercontent.com/openfaas/faas/master/stack.yml
+
+-- test gui ---
+http://192.168.99.120:8080/ui/
+
+--- install grafana ---
+docker service create -d --name=grafana --publish=3000:3000 --network=func_functions stefanprodan/faas-grafana:4.6.3
+
+--- test gui ---
+http://192.168.99.120:3000/login/ (admin | admin)
+
+**** Init the Kafka and ZooKeeper ****
+
+1. Zookeeper (using debezium version)
+
+cd .. && mkdir -p kafka && cd kafka && wget https://raw.githubusercontent.com/thanhledev/openfaas-debezium-config/master/zookeeper-compose.yml
+
+docker stack deploy kafka -c zookeeper-compose.yml
+
+docker service logs -f kafka_zookeeper (good)
+
+2. Kafka (using debezium version)
+
+wget https://raw.githubusercontent.com/thanhledev/openfaas-debezium-config/master/kafka-compose.yml
+
+docker stack deploy kafka -c kafka-compose.yml
+
+docker service logs -f kafka_kafka
+
+3. Test if we can use alexellis listener
+
+docker service create --name watcher -e gateway_url="http://gateway:8080" -e topics="dbserver1.inventory.customers," -e print_reponse="true" --network kafka_streaming --network func_functions alexellis2/kafka-connector:0.2.1
+
+docker service logs -f watcher
+
+docker service rm watcher
+
+4. Check available topics 
+
+docker run -it --rm --env ZOOKEEPER_CONNECT=zookeeper:2181 --network kafka_streaming debezium/kafka:0.8 list-topics
+
+5. Install mysql
+
+wget https://raw.githubusercontent.com/thanhledev/openfaas-debezium-config/master/mysql-compose.yml
+
+docker stack deploy kafka -c mysql-compose.yml
+
+docker service logs -f kafka_mysql
+
+docker container ls
+
+docker exec -it __id__ sh
+
+mysql -uroot -p ( debezium)
+
+6. Install connector (using debezium version)
+
+docker run -d --name connect -p 8083:8083 --network kafka_streaming --env GROUP_ID=1 --env CONFIG_STORAGE_TOPIC=my_connect_configs --env OFFSET_STORAGE_TOPIC=my_connect_offsets --env BOOTSTRAP_SERVERS=kafka:9092 debezium/connect:0.8
+
+docker service logs -f connect
+
+Test curl
+
+$ curl -H "Accept:application/json" localhost:8083/
+
+$ curl -H "Accept:application/json" localhost:8083/connectors/
+
+?????
+
+Create the connector to initialize the topics
+
+curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" localhost:8083/connectors/ -d '{ "name": "inventory-connector", "config": { "connector.class": "io.debezium.connector.mysql.MySqlConnector", "tasks.max": "1", "database.hostname": "mysql", "database.port": "3306", "database.user": "debezium", "database.password": "dbz", "database.server.id": "184054", "database.server.name": "dbserver1", "database.whitelist": "inventory", "database.history.kafka.bootstrap.servers": "kafka:9092", "database.history.kafka.topic": "dbhistory.inventory" } }'
+
+7. Deploy OpenFaaS function
+
+faas store deploy figlet --annotation topic="dbserver1.inventory.customers"
+
+
+
